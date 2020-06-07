@@ -1,0 +1,162 @@
+\documentclass[]{article}
+
+\usepackage{mathtools}
+\usepackage{semantic}
+
+
+%opening
+\title{Formulas}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\section{Evaluation}
+
+\begin{equation}
+\inference{}
+          {(r, (\iota_1;\iota_2);\iota_3) \xmapsto{p} (r, \iota_1;(\iota_2;\iota_3))}[step-seq]
+\end{equation}
+
+\begin{equation}
+\inference{r(v) = cons(a_0,a_1)~~~r[v':=a_0]=r'}
+          {(r, (\textbf{fetch-field}~v~0~v';\iota)) \xmapsto{p} (r', \iota)}[step-fetch-field-0]
+\end{equation}
+
+\begin{equation}
+\inference{r(v) = cons(a_0,a_1)~~~r[v':=a_1]=r'}
+          {(r, (\textbf{fetch-field}~v~1~v';\iota)) \xmapsto{p} (r', \iota)}[step-fetch-field-1]
+\end{equation}
+
+\begin{equation}
+\inference{r(v_0) = a_0~~~r(v_1)=a_1~~~r[v':=cons(a_0,a_1)]=r'}
+          {(r, (\textbf{cons}~v_0~v_1~v';\iota)) \xmapsto{p} (r', \iota)}[step-cons]
+\end{equation}
+
+\begin{equation}
+\inference{r(v) = cons(a_0,a_1)}
+          {(r, (\textbf{branch-if-nil}~v~l;\iota)) \xmapsto{p} (r, \iota)}[step-branch-not-taken]
+\end{equation}
+
+\begin{equation}
+\inference{r(v) = nil~~~p(l)=\iota'}
+          {(r, (\textbf{branch-if-nil}~v~l;\iota)) \xmapsto{p} (r, \iota')}[step-branch-taken]
+\end{equation}
+
+\begin{equation}
+\inference{p(l)=\iota'}
+          {(r, \textbf{jump}~l) \xmapsto{p} (r, \iota')}[step-jump]
+\end{equation}
+
+\begin{equation}
+\inference{(r, \iota) \xmapsto{p} (r', \iota')~~~(p, r', \iota')}
+          {(p, r, \iota) \Downarrow}[run-step]
+\end{equation}
+
+\begin{equation}
+\inference{}
+          {(p, r, \textbf{halt}) \Downarrow}[run-halt]
+\end{equation}
+
+\begin{equation}
+\inference{\{\}[\textbf{v}_0:=\text{nil}]=r~~~p(\textbf{L}_0)=\iota~~~(p,r,\iota)\Downarrow}
+          {p \Downarrow}[run-prog]
+\end{equation}
+
+\section{Typing}
+
+\subsection{Subtyping}
+
+\begin{equation}
+\inference{}
+          {\tau \subset \tau}[subtype-refl]
+\end{equation}
+
+\begin{equation}
+\inference{}
+          {\text{nil} \subset \text{list}~\tau}[subtype-nil]
+\end{equation}
+
+\begin{equation}
+\inference{\tau \subset \tau'}
+          {\text{list}~\tau \subset \text{list}~\tau'}[subtype-list]
+\end{equation}
+
+\begin{equation}
+\inference{\tau \subset \tau'}
+          {\text{listcons}~\tau \subset \text{list}~\tau'}[subtype-listcons]
+\end{equation}
+
+\begin{equation}
+\inference{\tau \subset \tau'}
+          {\text{listcons}~\tau \subset \text{listcons}~\tau'}[subtype-listmixed]
+\end{equation}
+
+\subsection{Instruction typing}
+
+\begin{equation}
+\inference{\Pi \vdash_{\text{instr}} \Gamma\{ \iota_1 \}\Gamma'~~~\Pi \vdash_{\text{instr}} \Gamma'\{ \iota_2 \}\Gamma''}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \iota_1 ; \iota_2 \}\Gamma''}[check-instr-seq]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v) = \text{list}~\tau~~~\Pi(l) = \Gamma_1~~~\Gamma[v:=\text{nil}]=\Gamma'~~~\Gamma' \subset \Gamma_1}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{branch-if-nil}~v~l \}(v: \text{listcons}~\tau,~\Gamma')}[check-instr-branch-list]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v) = \text{listcons}~\tau~~~\Pi(l) = \Gamma_1~~~\Gamma[v:=\text{nil}]=\Gamma'~~~\Gamma' \subset \Gamma_1}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{branch-if-nil}~v~l \}\Gamma}[check-instr-branch-listcons]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v) = \text{nil}~~~\Pi(l) = \Gamma_1~~~\Gamma \subset \Gamma_1}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{branch-if-nil}~v~l \}\Gamma}[check-instr-branch-nil]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v) = \text{listcons}~\tau~~~\Gamma[v':=\tau]=\Gamma'}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{fetch-field}~v~0~v' \}\Gamma'}[check-instr-fetch-0]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v) = \text{listcons}~\tau~~~\Gamma[v':=\text{list}~\tau]=\Gamma'}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{fetch-field}~v~1~v' \}\Gamma'}[check-instr-fetch-1]
+\end{equation}
+
+\begin{equation}
+\inference{\Gamma(v_0) = \tau_0~~~~~~~~~\Gamma(v_1) = \tau_1 \\ (\text{list}~\tau_0) \sqcap \tau_1=\text{list}~\tau~~~\Gamma[v:=\text{listcons}~\tau]=\Gamma'}
+          {\Pi \vdash_{\text{instr}} \Gamma\{ \textbf{cons}~v_0~v_1~v \}\Gamma'}[check-instr-cons]
+\end{equation}
+
+\subsection{Block typings}
+
+\begin{equation}
+\inference{}
+          {\Pi;\Gamma\vdash_{\text{block}} \textbf{halt}}[check-block-halt]
+\end{equation}
+
+\begin{equation}
+\inference{\Pi\vdash_{\text{instr}} \Gamma\{\iota_1\}\Gamma'~~~\Pi;\Gamma'\vdash_{\text{block}} \iota_2}
+          {\Pi;\Gamma\vdash_{\text{block}} \iota_1;\iota_2}[check-block-seq]
+\end{equation}
+
+\begin{equation}
+\inference{\Pi(l)=\Gamma_1~~~\Gamma \subset \Gamma_1}
+          {\Pi;\Gamma\vdash_{\text{block}} \textbf{jump}~l}[check-block-jump]
+\end{equation}
+
+\subsection{Program typings}
+
+\begin{equation}
+\inference{\Pi(l)=\Gamma~~~\Pi;\Gamma\vdash_{\text{block}} \iota~~~\Pi\vdash_{\text{blocks}} p}
+          {\Pi\vdash_{\text{blocks}} l: \iota;~p}[check-blocks-label]
+\end{equation}
+
+\begin{equation}
+\inference{}
+          {\Pi\vdash_{\text{blocks}} \textbf{end}}[check-blocks-empty]
+\end{equation}
+
+\end{document}
